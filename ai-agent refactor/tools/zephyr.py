@@ -14,14 +14,19 @@ def create_test_case(test_case):
 
     }
 
-# def create_test_case(test_case):
+def check_test_case_exists(story_id):
 
-#     return {
+    existing_cases = {
 
-#         "success": False,
+        "US-101": True,
+        "US-102": False
 
-#         "data": None,
+    }
 
-#         "error": "Unauthorized"
-
-#     }
+    return {
+        "success": True,
+        "data": {
+            "exists": existing_cases.get(story_id, False)
+        },
+        "error": None
+    }

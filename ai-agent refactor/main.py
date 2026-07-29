@@ -5,7 +5,7 @@ agent = Agent()
 
 
 response = agent.run(
-    "Crear test cases para las user stories pendientes"
+    "Crear test cases para las user stories pendientes."
 )
 
 

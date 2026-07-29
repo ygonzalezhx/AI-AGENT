@@ -1,12 +1,27 @@
 class FakeLLM:
 
-    def decide(self, question, history):
+    def decide(self, state,tools):
+        stories = state["stories"]
+        current_story = state["current_story"]
+        existing_test_case = state["test_case_exists"]
 
-        # Primer paso:
-        # todavía no tengo historias
 
-  
-        if len(history) == 0:
+        print("\n========== PROMPT ==========")
+        print(f"Pregunta: {state['question']}")
+        print()
+
+
+        print("Herramientas disponibles:")
+
+        for tool in tools:
+            print(f"- {tool['name']}: {tool['description']}")
+
+        print("============================\n")
+
+
+        # Estado 1: todavia no conozco historias. Debo obtenerlas
+         
+        if stories is None:
 
             return {
                 "thought": "Todavía no conozco las User Stories. Primero debo obtenerlas.",
@@ -15,43 +30,28 @@ class FakeLLM:
             }
 
 
-        # Segundo paso:
-        # ya tengo historias
+        # Estado 2 : ya conozco las User Stories
+        # Acción: crear un Test Case.
 
-        if history[-1]["tool"] == "get_pending_user_stories":
+        if current_story is not None:
 
-            stories = history[-1]["result"]["data"]
+            if existing_test_case is None:
 
-
-            return {
-                "thought": "Ya obtuve las historias. Ahora crearé un test para la primera.",
-                "tool": "create_test_case",
-                "args": {
-                    "test_case": {
-                        "title": f"Test para {stories[0]['title']}"
+                return {
+                    "thought": f"Crearé un Test Case para {current_story['id']}.",
+                    "tool": "create_test_case",
+                    "args": {
+                        "test_case": {
+                            "title": f"Test para {current_story['title']}"
+                        }
                     }
                 }
-            }
 
-        last_result = history[-1]["result"]
 
-        if not last_result["success"]:
-
-            return {
-
-                "thought": (
-                    f"La herramienta falló: {last_result['error']}. "
-                    "Finalizaré la ejecución."
-                ),
-
-                "tool": "finish",
-
-                "args": {}
-
-    }
-
+        # Estado: no quedan historias por procesar
+        # Acción: finalizar.
         return {
-            "thought": "Ya ejecuté todas las acciones necesarias.",
+            "thought": "Ya procesé todas las User Story",
             "tool": "finish",
             "args": {}
         }

@@ -9,6 +9,7 @@ class FakeLLM:
         if len(history) == 0:
 
             return {
+                "thought": "Todavía no conozco las User Stories. Primero debo obtenerlas.",
                 "tool": "get_pending_user_stories",
                 "args": {}
             }
@@ -19,10 +20,11 @@ class FakeLLM:
 
         if history[-1]["tool"] == "get_pending_user_stories":
 
-            stories = history[-1]["result"]
+            stories = history[-1]["result"]["data"]
 
 
             return {
+                "thought": "Ya obtuve las historias. Ahora crearé un test para la primera.",
                 "tool": "create_test_case",
                 "args": {
                     "test_case": {
@@ -31,17 +33,48 @@ class FakeLLM:
                 }
             }
 
+        last_result = history[-1]["result"]
+
+        if not last_result["success"]:
+
+            return {
+
+                "thought": (
+                    f"La herramienta falló: {last_result['error']}. "
+                    "Finalizaré la ejecución."
+                ),
+
+                "tool": "finish",
+
+                "args": {}
+
+    }
 
         return {
+            "thought": "Ya ejecuté todas las acciones necesarias.",
             "tool": "finish",
             "args": {}
         }
 
 
-
     def final_answer(self, history):
 
-        return "\n".join(
-            str(step["result"])
-            for step in history
-        )
+        lines = []
+
+        for step in history:
+
+            result = step["result"]
+
+            if result["success"]:
+
+                lines.append(
+                    f"✔ {step['tool']} ejecutada correctamente."
+                )
+
+            else:
+
+                lines.append(
+                    f"✘ {step['tool']} falló: {result['error']}"
+                )
+
+        return "\n".join(lines) 

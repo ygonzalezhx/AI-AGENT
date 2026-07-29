@@ -13,13 +13,17 @@ class Agent:
         #para que el llm pueda tener contexto. El historial solo vive en esa ejecucion
         
         for _ in range(MAX_STEPS):
+            
         
             decision = self.llm.decide(question,history) #aca le mando la pregunta al llm y me devuelve la 
                 #decision de que herramienta usar y qué argumentos
+            print(f"\nThought: {decision['thought']}")
+            print(f"Action: {decision['tool']}")
 
             if decision["tool"] == "finish":
-                 break
-         
+                print("\nAgent finished.\n")
+                break
+                    
                 
             tool_name = decision["tool"] #a tool_name le asigno el nombre de la tool que me devolvio
                     #la linea anterior, que es la decision del llm. Ejemplo: "create_test_case" o "get_open_bugs"
@@ -37,11 +41,18 @@ class Agent:
                     #aca ejecuto la tool que me devolvio el llm, con los args que me devolvio el llm
 
             history.append({
+                    "thought": decision["thought"],
                     "tool": decision["tool"],
                     "args": decision["args"],
                     "result": result
                 })
-            print(history)
+            
+            if result["success"]:
+                print("Observation:")
+                print(result["data"])
+            else:
+                print("Observation:")
+                print(f"ERROR: {result['error']}")
 
                
 

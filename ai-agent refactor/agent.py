@@ -70,8 +70,27 @@ class Agent:
                     "result": result
                 })
 
-            if tool_name == "check_test_case_exists":
-                state["test_case_exists"]
+            if tool_name == "check_test_case_exists" and result["success"]:
+                state["test_case_exists"] = result["data"]["exists"]
+
+                if state["test_case_exists"]:
+
+                    state["current_story_index"] += 1
+
+
+                    if state["current_story_index"] < len(state["stories"]):
+
+                        state["current_story"] = state["stories"][
+                            state["current_story_index"]
+                        ]
+
+                        # importante:
+                        # volvemos a preguntar para la nueva historia
+                        state["test_case_exists"] = None
+
+                    else:
+
+                        state["current_story"] = None
 
             
             if tool_name == "create_test_case" and result["success"]:
@@ -89,10 +108,10 @@ class Agent:
                 print("Observation:")
                 print(f"ERROR: {result['error']}")
 
-            if state["current_story_index"] < len(state["stories"]):
-                state["current_story"] = state["stories"][state["current_story_index"]]
-            else:
-                state["current_story"] = None
+            # if state["current_story_index"] < len(state["stories"]):
+            #     state["current_story"] = state["stories"][state["current_story_index"]]
+            # else:
+            #     state["current_story"] = None
            
             
 

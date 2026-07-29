@@ -3,7 +3,7 @@ class FakeLLM:
     def decide(self, state,tools):
         stories = state["stories"]
         current_story = state["current_story"]
-        existing_test_case = state["test_case_exists"]
+        test_case_exists = state["test_case_exists"]
 
 
         print("\n========== PROMPT ==========")
@@ -30,22 +30,61 @@ class FakeLLM:
             }
 
 
-        # Estado 2 : ya conozco las User Stories
-        # Acción: crear un Test Case.
+        # Estado 2 : ya conozco las User Stories, pero no se aún si existen test cases
+        # Acción: chequear que tengan test case
 
-        if current_story is not None:
+        if current_story is not None and test_case_exists is None:  
+            return {
 
-            if existing_test_case is None:
+                "thought":
+                f"Debo comprobar si {current_story['id']} ya tiene Test Cases.",
 
-                return {
-                    "thought": f"Crearé un Test Case para {current_story['id']}.",
-                    "tool": "create_test_case",
-                    "args": {
-                        "test_case": {
-                            "title": f"Test para {current_story['title']}"
-                        }
+                "tool":
+                "check_test_case_exists",
+
+                "args":
+                {
+                    "story_id": current_story["id"]
+                }
+
+            }
+
+        #Estado 3. Ya se si existe
+        if test_case_exists is True:
+
+            return {
+
+                "thought":
+                "La historia ya tiene Test Cases. Continuaré con la siguiente historia.",
+
+                "tool":"finish",
+
+                "args": {}
+
+            }
+
+        if test_case_exists is False:
+
+            return {
+
+                "thought":
+                f"La historia  {current_story['id']} no tiene Test Cases. Crearé uno.",
+
+                "tool":
+                "create_test_case",
+
+                "args":
+                {
+                    "test_case":
+                    {
+                        "title":
+                        f"Test para {current_story['title']}"
                     }
                 }
+
+            }
+
+
 
 
         # Estado: no quedan historias por procesar

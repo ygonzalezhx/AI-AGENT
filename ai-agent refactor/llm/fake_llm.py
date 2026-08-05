@@ -1,22 +1,19 @@
 class FakeLLM:
 
-    def decide(self, state,tools):
+    def decide(self, prompt, state):
+
+
+        if "Current Story: None" in prompt and state["stories"] is not None:
+
+            return {
+                "thought": "Ya procesé todas las User Stories.",
+                "tool": "finish",
+                "args": {}
+            }
+        
         stories = state["stories"]
         current_story = state["current_story"]
         test_case_exists = state["test_case_exists"]
-
-
-        print("\n========== PROMPT ==========")
-        print(f"Pregunta: {state['question']}")
-        print()
-
-
-        print("Herramientas disponibles:")
-
-        for tool in tools:
-            print(f"- {tool['name']}: {tool['description']}")
-
-        print("============================\n")
 
 
         # Estado 1: todavia no conozco historias. Debo obtenerlas

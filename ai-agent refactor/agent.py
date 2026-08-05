@@ -1,12 +1,20 @@
-from llm import FakeLLM
+from llm.fake_llm import FakeLLM
+from llm.ollama_llm import OllamaLLM
 from registry import TOOLS
 from tool_definitions import TOOL_DEFINITIONS
+from state_manager import StateManager
+from prompt_builder import PromptBuilder
+
 MAX_STEPS = 10
 
 class Agent:
 
     def __init__(self):
         self.llm = FakeLLM()
+        #self.llm = OllamaLLM()
+        self.state_manager = StateManager()
+        self.prompt_builder = PromptBuilder()
+
 
     def run(self, question):
         state = {
@@ -22,9 +30,18 @@ class Agent:
         
         
         for _ in range(MAX_STEPS):
+            prompt = self.prompt_builder.build(
+                state,
+                TOOL_DEFINITIONS
+            )
+
+            DEBUG = True
+
+            if DEBUG:
+                print(prompt)
             
         
-            decision = self.llm.decide(state,TOOL_DEFINITIONS) #aca le el state
+            decision = self.llm.decide(prompt,state) #aca le el state
             print(f"\nThought: {decision['thought']}")
             print(f"Action: {decision['tool']}")
 
@@ -54,51 +71,12 @@ class Agent:
             #aca ejecuto la tool que me devolvio el llm, con los args que me devolvio el llm. Es como
             #hacer -si estoy en la tool create_test_cases: result = create_test_cases(test_case)
             result = tool(**args)
-                  
-            #si la tool actual es get_pending_user_stories, actualizo el state, y ahora las stories alli 
-            #son una lista [], con las user stories obtenidas del metodo get_pending_user_stories
-            if tool_name == "get_pending_user_stories" and result["success"]:
-                state["stories"] = result["data"]
-
-                #inicializo con la primera historia de usuario
-                state["current_story"] = result["data"][0]
-
-            state["history"].append({
-                    "thought": decision["thought"],
-                    "tool": decision["tool"],
-                    "args": decision["args"],
-                    "result": result
-                })
-
-            if tool_name == "check_test_case_exists" and result["success"]:
-                state["test_case_exists"] = result["data"]["exists"]
-
-                if state["test_case_exists"]:
-
-                    state["current_story_index"] += 1
-
-
-                    if state["current_story_index"] < len(state["stories"]):
-
-                        state["current_story"] = state["stories"][
-                            state["current_story_index"]
-                        ]
-
-                        # importante:
-                        # volvemos a preguntar para la nueva historia
-                        state["test_case_exists"] = None
-
-                    else:
-
-                        state["current_story"] = None
-
-            
-            if tool_name == "create_test_case" and result["success"]:
-                state["generated_test_cases"].append({
-                    "story": state["current_story"]["id"],
-                    "test_case": result["data"]["id"]})
-
-                state["current_story_index"] += 1
+            self.state_manager.update(
+                    state,
+                    tool_name,
+                    result
+                )
+                      
             
             
             if result["success"]:
@@ -108,11 +86,13 @@ class Agent:
                 print("Observation:")
                 print(f"ERROR: {result['error']}")
 
-            # if state["current_story_index"] < len(state["stories"]):
-            #     state["current_story"] = state["stories"][state["current_story_index"]]
-            # else:
-            #     state["current_story"] = None
-           
+            state["history"].append({
+                    "thought": decision["thought"],
+                    "tool": decision["tool"],
+                    "args": decision["args"],
+                    "result": result
+                })
+
             
 
 
